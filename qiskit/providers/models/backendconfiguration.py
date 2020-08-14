@@ -11,16 +11,17 @@
 # that they have been altered from the originals.
 
 """Backend Configuration Classes."""
-import re
 import copy
+import numbers
+import re
 import warnings
-from typing import Dict, List, Any, Iterable, Union
 from collections import defaultdict
+from typing import Any, Dict, Iterable, List, Union
 
 from qiskit.exceptions import QiskitError
 from qiskit.providers.exceptions import BackendConfigurationError
-from qiskit.pulse.channels import (Channel, DriveChannel, MeasureChannel,
-                                   ControlChannel, AcquireChannel)
+from qiskit.pulse.channels import (AcquireChannel, Channel, ControlChannel,
+                                   DriveChannel, MeasureChannel)
 
 
 class GateConfig:
@@ -521,7 +522,17 @@ class PulseBackendConfiguration(QasmBackendConfiguration):
                               (min_range, max_range) in meas_lo_range]
         self.meas_kernels = meas_kernels
         self.discriminators = discriminators
-        self.hamiltonian = hamiltonian
+
+        if hamiltonian is not None:
+            self.hamiltonian = dict(hamiltonian)
+
+            # convert GHz to Hz
+            self.hamiltonian['vars'] = {
+                k: v * 1e9 if isinstance(v, numbers.Number) else v
+                for k, v in self.hamiltonian['vars'].items()
+            }
+        else:
+            self.hamiltonian = None
 
         self.dynamic_reprate_enabled = dynamic_reprate_enabled
 
